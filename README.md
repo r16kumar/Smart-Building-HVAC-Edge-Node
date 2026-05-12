@@ -1,46 +1,63 @@
-# Smart Building Energy Management: Edge AI HVAC Node
+# Energy-Aware HVAC Optimization Using Unsupervised Learning on Edge Hardware
+### A Smart Building Edge AI Node
 
-## Overview
-This repository contains the firmware, hardware architecture, and telemetry data for a custom IoT-based HVAC control node. Designed to replace wasteful binary (ON/OFF) ventilation systems, this edge node utilizes proportional PWM actuation driven by a local TinyML anomaly detection model.
-
-By pushing compute capabilities directly to the edge, the system minimizes cloud latency and drastically reduces power consumption. Empirical validation over a 338-hour field deployment demonstrated a **98.61% energy reduction** compared to baseline systems.
-
----
-
-## 1. Hardware Architecture & EMC
-The hardware is built around an ESP32 dual-core microcontroller, interfacing with an analog MQ135 air quality sensor and driving an IRLZ44N MOSFET for high-current motor actuation. Power delivery is handled via an onboard LM2596 step-down converter.
-
-**Electromagnetic Compatibility (EMC) Solutions:**
-During initial prototyping, high switching noise from the motor driver induced severe Transient Voltage Sag and Ground Bounce, causing ADC sensor blindness. The final 2-layer PCB was engineered with a strict **Star Grounding topology**, physically and electrically isolating the noisy motor drive logic from the sensitive analog sensor paths.
-
-* [View Custom PCB Schematic](hardware/HVAC_Node_Schematic.png)
-* [View 3D Board Layout](hardware/PCB_3D_Layout.png)
-* [View BOM & Pick/Place Manufacturing Files](hardware/)
+[![Watch the Hardware Demonstration](https://img.youtube.com/vi/z8VBz95kYA8/maxresdefault.jpg)](https://www.youtube.com/watch?v=z8VBz95kYA8)
+*(Click the image above to watch the full hardware demonstration on YouTube)*
 
 ---
 
-## 2. Firmware & Edge AI (TinyML)
-The firmware is written in bare-metal C++ utilizing the ESP32 Core 3.x API for direct hardware timer PWM generation. 
+## 📌 Project Overview
+This project demonstrates a predictive, energy-aware HVAC management system built on the **ESP32-WROOM-32** platform. It utilizes **TinyML (Edge AI)** to perform 100% offline anomaly detection on indoor air quality, specifically targeting Volatile Organic Compounds (VOCs).
 
-To eliminate reliance on cloud compute, an unsupervised **K-Means clustering algorithm** was trained via Edge Impulse and deployed natively onto the ESP32. The model evaluates raw ADC telemetry entirely offline within the strict 520 KB SRAM footprint, triggering proportional exhaust actuation only when a confirmed chemical anomaly breaches the threshold.
+Unlike traditional systems that use static "if-voltage > threshold" logic, this node employs an unsupervised **K-Means Clustering** algorithm. It processes a 60-second sliding window of air quality data to calculate a continuous anomaly distance metric. This allows for fine-grained, predictive fan speed control via **Pulse Width Modulation (PWM)**, maximizing energy efficiency by only drawing the power necessary for the detected hazard level.
 
-* [View Main Execution Firmware](firmware/hvac_edge_node_main.ino)
-* [View MQ-135 ADC Calibration Utility](firmware/mq135_burn_in_calibration.ino)
-* [View TinyML Anomaly Clusters](tinyml_models/Anomaly_Detection_Clusters.png)
+**Developer:** [Rohit Kumar](https://github.com/your-github-profile)  
+**Institution:** [Bharati Vidyapeeth's College of Engineering (BVCOE), New Delhi](https://main.bvcoend.ac.in/)  
+**Course:** B.Tech Electronics & Communication Engineering (Final Year)  
+
+---
+
+## 🧠 TinyML Architecture
+The machine learning pipeline was developed and trained using **Edge Impulse**, utilizing real-world data collected in New Delhi environments.
+
+* **Algorithm:** K-Means Anomaly Detection (k=32 centroids).
+* **Window Size:** 60,000 ms (total temporal context).
+* **Stride Execution:** 15,000 ms (inference occurs every 15 seconds).
+* **Feature Extraction:** Raw analog voltage from a hardware-calibrated MQ135 sensor.
+* **Inference Speed:** ~2 ms (on-device).
 
 ---
 
-## 3. Empirical Validation & Telemetry
-System efficiency was validated using I2C power monitors (INA219) capturing live telemetry over 14 days. Data was parsed and integrated using Python (Pandas/Matplotlib).
+## ⚡ Energy-Aware Actuation Logic
+The system translates the AI's "Anomaly Score" into precise fan speeds. The logic is optimized for a **12V 1A power budget**, with PWM duty cycles clamped at 94% to protect the MOSFET and motor electronics.
 
-**Results:**
-* **Total Experiment Duration:** 338.0 Hours
-* **Smart System Energy Used:** 5.17 Wh
-* **Traditional Binary Fan Energy (Estimate):** 371.80 Wh
-* **Total Energy Saved:** 98.61%
-
-* [View Power Draw Telemetry Graph](telemetry_and_data/Energy_Savings_Validation.png)
-* [View Dynamic IAQ vs. PWM Response Graph](telemetry_and_data/IAQ_PWM_Response.png)
+| Anomaly Score | Air Quality State | Fan Speed | Duty Cycle (8-bit) |
+| :--- | :--- | :--- | :--- |
+| **< 0.15** | Normal / Clean | **0% (OFF)** | 0 |
+| **0.15 - 0.60** | Slight Anomaly | **40%** | 102 |
+| **0.60 - 1.50** | Moderate Hazard | **70%** | 178 |
+| **> 1.50** | Severe Hazard | **94%** | 240 |
 
 ---
-*Architected and developed by Rohit Kumar.*
+
+## 🛠️ Hardware Specification
+* **MCU:** ESP32-WROOM-32.
+* **Gas Sensor:** MQ135 (Air Quality/VOCs).
+* **Environmental Sensor:** DHT11 (Temperature & Humidity).
+* **Power Monitor:** INA219 (Real-time heater and system power logging).
+* **Display:** SSD1306 128x64 I2C OLED.
+* **Actuator:** 12V Brushless DC Fan controlled via IRLZ44N N-Channel MOSFET.
+* **Power Rail:** 12V DC Adapter (1A) with LM2596 Buck Converter for 5V logic isolation.
+
+---
+
+## 🚀 Technical Highlights
+1.  [cite_start]**Software-Defined Calibration:** Compensated for MQ135 "burn-in" drift using a software multiplier (5.2x), enabling accurate 0.74V baselines through a physical voltage divider[cite: 1].
+2.  [cite_start]**ADC-Wi-Fi Interference Fix:** Implemented an "Offline Wakeup" blip in the setup phase to initialize the ESP32's ADC power registers without requiring a constant 500mA Wi-Fi power draw[cite: 1].
+3.  [cite_start]**Bootstrap Protection:** Clamped PWM output at 94% to ensure reliable operation of the MOSFET gate and fan motor capacitors during severe hazard events[cite: 1].
+
+---
+
+## 📂 Repository Structure
+* `/firmware/` - Contains the `Smart_HVAC_Edge_Node.ino` sketch and K-Means library.
+* `/docs/` - Circuit diagrams and data analysis summaries.
