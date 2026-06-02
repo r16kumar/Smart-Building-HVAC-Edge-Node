@@ -24,7 +24,7 @@ The machine learning pipeline was developed and trained using **Edge Impulse**, 
 * **Window Size:** 60,000 ms (total temporal context).
 * **Stride Execution:** 15,000 ms (inference occurs every 15 seconds).
 * **Feature Extraction:** Raw analog voltage from a hardware-calibrated MQ135 sensor.
-* **Inference Speed:** ~2 ms (on-device).
+* **Inference Speed:** ~2 ms (on device).
 
 ---
 
@@ -44,7 +44,7 @@ The system translates the AI's "Anomaly Score" into precise fan speeds. The logi
 * **MCU:** ESP32-WROOM-32.
 * **Gas Sensor:** MQ135 (Air Quality/VOCs).
 * **Environmental Sensor:** DHT11 (Temperature & Humidity).
-* **Power Monitor:** INA219 (Real-time heater and system power logging).
+* **Power Monitor:** INA219 (Real time heater and system power logging).
 * **Display:** SSD1306 128x64 I2C OLED.
 * **Actuator:** 12V Brushless DC Fan controlled via IRLZ44N N-Channel MOSFET.
 * **Power Rail:** 12V DC Adapter (1A) with LM2596 Buck Converter for 5V logic isolation.
@@ -52,7 +52,7 @@ The system translates the AI's "Anomaly Score" into precise fan speeds. The logi
 ---
 
 ## 🚀 Technical Highlights
-1.  [cite_start]**Software-Defined Calibration:** Compensated for MQ135 "burn-in" drift using a software multiplier (5.2x), enabling accurate 0.74V baselines through a physical voltage divider[cite: 1].
+1.  [cite_start]**Software-Defined Calibration:** Compensated for MQ135 "burn in" drift using a software multiplier (5.2x), enabling accurate 0.74V baselines through a physical voltage divider[cite: 1].
 2.  [cite_start]**ADC-Wi-Fi Interference Fix:** Implemented an "Offline Wakeup" blip in the setup phase to initialize the ESP32's ADC power registers without requiring a constant 500mA Wi-Fi power draw[cite: 1].
 3.  [cite_start]**Bootstrap Protection:** Clamped PWM output at 94% to ensure reliable operation of the MOSFET gate and fan motor capacitors during severe hazard events[cite: 1].
 
